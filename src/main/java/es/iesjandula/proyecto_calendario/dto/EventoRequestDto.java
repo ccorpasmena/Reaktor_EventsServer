@@ -1,0 +1,22 @@
+package es.iesjandula.proyecto_calendario.dto;
+
+import java.util.Date;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class EventoRequestDto
+{
+    private String titulo;
+    private Date fechaInicio;
+    private Date fechaFin;
+    
+    private String usuarioId;
+    private String categoriaId;
+}
