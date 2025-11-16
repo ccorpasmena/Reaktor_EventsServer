@@ -25,10 +25,10 @@ public class Usuario
 {
 	@Id
 	@Column(length = 150)
-	private String correo;
+	private String correoUsuario;
 
 	@Column(length = 100, nullable = false)
-    private String nombre;
+    private String nombreUsuario;
 
     @OneToMany(mappedBy = "usuario")
     private List<Evento> eventos ;

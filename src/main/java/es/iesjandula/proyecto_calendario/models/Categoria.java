@@ -25,10 +25,10 @@ public class Categoria
 {
     @Id
     @Column(length = 100)
-    private String nombre;
+    private String nombreCategoria;
 
     @Column(length = 10)
-    private String color;
+    private String colorCategoria;
 
     @OneToMany(mappedBy = "categoria")
     private List<Evento> eventos;

@@ -1,5 +1,6 @@
 package es.iesjandula.proyecto_calendario.rest;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import es.iesjandula.proyecto_calendario.dto.UsuarioRequestDto;
+import es.iesjandula.proyecto_calendario.dto.UsuarioResponseDto;
 import es.iesjandula.proyecto_calendario.models.Usuario;
 import es.iesjandula.proyecto_calendario.repository.IUsuarioRepository;
 import es.iesjandula.proyecto_calendario.utils.CalendarioException;
@@ -29,32 +31,26 @@ public class UsuarioRestController
     private IUsuarioRepository usuarioRepository;
 
     @PostMapping(value = "/", consumes = "application/json")
-    public ResponseEntity<?> crearUsuario(@RequestBody UsuarioRequestDto usuarioRequestDto)
-    {
-        try
-        {
-            if (usuarioRequestDto.getCorreo() == null || usuarioRequestDto.getCorreo().isEmpty())
-            {
+    public ResponseEntity<?> crearUsuario(@RequestBody UsuarioRequestDto usuarioRequestDto) {
+        try {
+            if (usuarioRequestDto.getCorreo() == null || usuarioRequestDto.getCorreo().isEmpty()) {
                 log.error(Constants.ERR_USUARIO_CORREO_NULO_VACIO);
                 throw new CalendarioException(Constants.ERR_USUARIO_CODE, Constants.ERR_USUARIO_CORREO_NULO_VACIO);
             }
 
-            if (usuarioRepository.existsById(usuarioRequestDto.getNombre()))
-            {
+            if (usuarioRepository.existsById(usuarioRequestDto.getCorreo())) {
                 log.error(Constants.ERR_USUARIO_EXISTE);
                 throw new CalendarioException(Constants.ERR_USUARIO_CODE, Constants.ERR_USUARIO_EXISTE);
             }
 
             Usuario usuario = new Usuario();
-            usuario.setNombre(usuarioRequestDto.getNombre());
-            usuario.setCorreo(usuarioRequestDto.getCorreo());
+            usuario.setNombreUsuario(usuarioRequestDto.getNombre());
+            usuario.setCorreoUsuario(usuarioRequestDto.getCorreo());
 
             usuarioRepository.saveAndFlush(usuario);
             log.info(Constants.ELEMENTO_AGREGADO);
             return ResponseEntity.ok().build();
-        }
-        catch (CalendarioException e)
-        {
+        } catch (CalendarioException e) {
             return ResponseEntity.badRequest().body(e);
         }
     }
@@ -78,7 +74,7 @@ public class UsuarioRestController
             }
 
             Usuario usuario = optionalUsuario.get();
-            usuario.setNombre(usuarioRequestDto.getNombre());
+            usuario.setNombreUsuario(usuarioRequestDto.getNombre());
 
             usuarioRepository.saveAndFlush(usuario);
             log.info(Constants.ELEMENTO_MODIFICADO);
@@ -113,7 +109,8 @@ public class UsuarioRestController
     @GetMapping(value="/")
     public ResponseEntity<?> obtenerUsuarios()
     {
-        return ResponseEntity.ok().body(usuarioRepository.findAll());
+    	List<UsuarioResponseDto> usuarios = usuarioRepository.buscarUsuarios();
+        return ResponseEntity.ok(usuarios);
     }
 }
 

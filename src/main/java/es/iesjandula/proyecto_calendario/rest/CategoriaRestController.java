@@ -1,12 +1,21 @@
 package es.iesjandula.proyecto_calendario.rest;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import es.iesjandula.proyecto_calendario.dto.CategoriaRequestDto;
+import es.iesjandula.proyecto_calendario.dto.CategoriaResponseDto;
 import es.iesjandula.proyecto_calendario.models.Categoria;
 import es.iesjandula.proyecto_calendario.repository.ICategoriaRepository;
 import es.iesjandula.proyecto_calendario.utils.CalendarioException;
@@ -26,21 +35,21 @@ public class CategoriaRestController
     {
         try
         {
-            if (categoriaRequestDto.getNombre() == null || categoriaRequestDto.getNombre().isEmpty())
+            if (categoriaRequestDto.getNombreCategoria() == null || categoriaRequestDto.getNombreCategoria().isEmpty())
             {
                 log.error(Constants.ERR_CATEGORIA_NOMBRE_NULO_VACIO);
                 throw new CalendarioException(Constants.ERR_CATEGORIA_CODE, Constants.ERR_CATEGORIA_NOMBRE_NULO_VACIO);
             }
 
-            if (categoriaRepository.existsById(categoriaRequestDto.getNombre()))
+            if (categoriaRepository.existsById(categoriaRequestDto.getNombreCategoria()))
             {
                 log.error(Constants.ERR_CATEGORIA_EXISTE);
                 throw new CalendarioException(Constants.ERR_CATEGORIA_CODE, Constants.ERR_CATEGORIA_EXISTE);
             }
 
             Categoria categoria = new Categoria();
-            categoria.setNombre(categoriaRequestDto.getNombre());
-            categoria.setColor(categoriaRequestDto.getColor());
+            categoria.setNombreCategoria(categoriaRequestDto.getNombreCategoria());
+            categoria.setColorCategoria(categoriaRequestDto.getColorCategoria());
 
             categoriaRepository.saveAndFlush(categoria);
             log.info(Constants.ELEMENTO_AGREGADO);
@@ -57,7 +66,7 @@ public class CategoriaRestController
     {
         try
         {
-            Optional<Categoria> optionalCategoria = categoriaRepository.findById(categoriaRequestDto.getNombre());
+            Optional<Categoria> optionalCategoria = categoriaRepository.findById(categoriaRequestDto.getNombreCategoria());
             if (!optionalCategoria.isPresent())
             {
                 log.error(Constants.ERR_CATEGORIA_NO_EXISTE);
@@ -65,8 +74,8 @@ public class CategoriaRestController
             }
 
             Categoria categoria = optionalCategoria.get();
-            categoria.setNombre(categoriaRequestDto.getNombre());
-            categoria.setColor(categoriaRequestDto.getColor());
+            categoria.setNombreCategoria(categoriaRequestDto.getNombreCategoria());
+            categoria.setColorCategoria(categoriaRequestDto.getColorCategoria());
 
             categoriaRepository.saveAndFlush(categoria);
             log.info(Constants.ELEMENTO_MODIFICADO);
@@ -100,8 +109,9 @@ public class CategoriaRestController
     }
 
     @GetMapping(value="/")
-    public ResponseEntity<?> listarCategorias()
+    public ResponseEntity<?> obtenerCategorias()
     {
-        return ResponseEntity.ok(categoriaRepository.findAll());
+    	List<CategoriaResponseDto> categorias = categoriaRepository.buscarCategorias();
+        return ResponseEntity.ok(categorias);
     }
 }

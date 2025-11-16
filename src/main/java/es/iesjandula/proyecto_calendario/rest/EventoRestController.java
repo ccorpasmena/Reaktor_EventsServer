@@ -1,5 +1,6 @@
 package es.iesjandula.proyecto_calendario.rest;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,9 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import es.iesjandula.proyecto_calendario.dto.EventoRequestDto;
+import es.iesjandula.proyecto_calendario.dto.EventoResponseDto;
 import es.iesjandula.proyecto_calendario.models.Categoria;
 import es.iesjandula.proyecto_calendario.models.Evento;
 import es.iesjandula.proyecto_calendario.models.Usuario;
+import es.iesjandula.proyecto_calendario.models.ids.EventoId;
 import es.iesjandula.proyecto_calendario.repository.ICategoriaRepository;
 import es.iesjandula.proyecto_calendario.repository.IEventoRepository;
 import es.iesjandula.proyecto_calendario.repository.IUsuarioRepository;
@@ -48,13 +51,15 @@ public class EventoRestController
                 log.error(Constants.ERR_EVENTO_TITULO_NULO_VACIO);
                 throw new CalendarioException(Constants.ERR_EVENTO_CODE, Constants.ERR_EVENTO_TITULO_NULO_VACIO);
             }
+            
+            EventoId eventoId = new EventoId(eventoRequestDto.getTitulo(), eventoRequestDto.getFechaInicio(),eventoRequestDto.getFechaFin());
 
-            if (eventoRepository.existsById(eventoRequestDto.getTitulo()))
+            if (eventoRepository.existsById(eventoId))
             {
                 log.error(Constants.ERR_EVENTO_EXISTE);
                 throw new CalendarioException(Constants.ERR_EVENTO_CODE, Constants.ERR_EVENTO_EXISTE);
             }
-            Optional<Usuario> usuarioOpt = this.usuarioRepository.findById(eventoRequestDto.getUsuarioId());
+            Optional<Usuario> usuarioOpt = this.usuarioRepository.findById(eventoRequestDto.getCorreoUsuario());
             if (!usuarioOpt.isPresent())
             {
                 log.error(Constants.ERR_USUARIO_NO_EXISTE);
@@ -62,7 +67,7 @@ public class EventoRestController
             }
             Usuario usuario = usuarioOpt.get();
             
-            Optional<Categoria> categoriaOpt = this.categoriaRepository.findById(eventoRequestDto.getCategoriaId());
+            Optional<Categoria> categoriaOpt = this.categoriaRepository.findById(eventoRequestDto.getNombreCategoria());
             if (!categoriaOpt.isPresent())
             {
                 log.error(Constants.ERR_CATEGORIA_NO_EXISTE);
@@ -71,11 +76,9 @@ public class EventoRestController
             Categoria categoria = categoriaOpt.get();
 
             Evento evento = new Evento();
-            evento.setTitulo(eventoRequestDto.getTitulo());
-            evento.setFechaInicio(eventoRequestDto.getFechaInicio());
-            evento.setFechaFin(eventoRequestDto.getFechaFin());
-            evento.setUsuario(usuario);
-            evento.setCategoria(categoria);
+            evento.setId(eventoId);
+            evento.setUsuario(usuarioOpt.get());
+            evento.setCategoria(categoriaOpt.get());
 
             eventoRepository.saveAndFlush(evento);
             log.info(Constants.ELEMENTO_AGREGADO);
@@ -97,8 +100,10 @@ public class EventoRestController
                log.error(Constants.ERR_EVENTO_TITULO_NULO_VACIO);
                throw new CalendarioException(Constants.ERR_EVENTO_CODE, Constants.ERR_EVENTO_TITULO_NULO_VACIO);
            }
+           
+           EventoId eventoId = new EventoId(eventoRequestDto.getTitulo(), eventoRequestDto.getFechaInicio(),eventoRequestDto.getFechaFin());
 
-           Optional<Evento> eventoOpt = eventoRepository.findById(eventoRequestDto.getTitulo());
+           Optional<Evento> eventoOpt = eventoRepository.findById(eventoId);
            if (!eventoOpt.isPresent())
            {
                log.error(Constants.ERR_EVENTO_NO_EXISTE);
@@ -113,18 +118,19 @@ public class EventoRestController
                throw new CalendarioException(Constants.ERR_EVENTO_CODE, Constants.ERR_EVENTO_FECHAS_INVALIDAS);
            }
 
-           Optional<Usuario> usuarioOpt = usuarioRepository.findById(eventoRequestDto.getUsuarioId());
+           Optional<Usuario> usuarioOpt = usuarioRepository.findById(eventoRequestDto.getCorreoUsuario());
            if (!usuarioOpt.isPresent())
            {
                log.error(Constants.ERR_USUARIO_NO_EXISTE);
                throw new CalendarioException(Constants.ERR_USUARIO_CODE, Constants.ERR_USUARIO_NO_EXISTE);
            }
            Usuario usuario = usuarioOpt.get();
-
+           Optional<Categoria> categoriaOpt = null;
+           
            Categoria categoria = null;
-           if (eventoRequestDto.getCategoriaId() != null)
+           if (eventoRequestDto.getNombreCategoria() != null)
            {
-               Optional<Categoria> categoriaOpt = categoriaRepository.findById(eventoRequestDto.getCategoriaId());
+               categoriaOpt = categoriaRepository.findById(eventoRequestDto.getNombreCategoria());
                if (!categoriaOpt.isPresent())
                {
                    log.error(Constants.ERR_CATEGORIA_NO_EXISTE);
@@ -133,11 +139,9 @@ public class EventoRestController
                categoria = categoriaOpt.get();
            }
 
-           evento.setTitulo(eventoRequestDto.getTitulo());
-           evento.setFechaInicio(eventoRequestDto.getFechaInicio());
-           evento.setFechaFin(eventoRequestDto.getFechaFin());
-           evento.setUsuario(usuario);
-           evento.setCategoria(categoria);
+           evento.setId(eventoId);
+           evento.setUsuario(usuarioOpt.get());
+           evento.setCategoria(categoriaOpt.get());
 
            eventoRepository.saveAndFlush(evento);
            log.info(Constants.ELEMENTO_MODIFICADO);
@@ -150,17 +154,17 @@ public class EventoRestController
    }
 
     @DeleteMapping(value="/{idEvento}")
-    public ResponseEntity<?> eliminarEvento(@PathVariable String idEvento)
+    public ResponseEntity<?> eliminarEvento(@PathVariable EventoId id)
     {
         try
         {
-            if (!eventoRepository.existsById(idEvento))
+            if (!eventoRepository.existsById(id))
             {
                 log.error(Constants.ERR_EVENTO_NO_EXISTE);
                 throw new CalendarioException(Constants.ERR_EVENTO_CODE, Constants.ERR_EVENTO_NO_EXISTE);
             }
 
-            eventoRepository.deleteById(idEvento);
+            eventoRepository.deleteById(id);
             log.info(Constants.ELEMENTO_ELIMINADO);
             return ResponseEntity.ok().body(Constants.ELEMENTO_ELIMINADO);
         }
@@ -171,8 +175,9 @@ public class EventoRestController
     }
 
     @GetMapping(value="/")
-    public ResponseEntity<?> listarEventos()
+    public ResponseEntity<?> obtenerEventos()
     {
-        return ResponseEntity.ok(eventoRepository.findAll());
+    	List<EventoResponseDto> eventos = eventoRepository.buscarEventos();
+        return ResponseEntity.ok(eventos);
     }
 }
