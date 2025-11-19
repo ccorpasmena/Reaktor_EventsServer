@@ -1,5 +1,6 @@
 package es.iesjandula.proyecto_calendario.rest;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -180,4 +181,40 @@ public class EventoRestController
     	List<EventoResponseDto> eventos = eventoRepository.buscarEventos();
         return ResponseEntity.ok(eventos);
     }
+    /**
+     * endpoint para obtener un evento a traves de su id
+     */
+    @GetMapping("/{titulo}/{fechaInicio}/{fechaFin}")
+    public ResponseEntity<?> obtenerEventoPorId(@PathVariable String titulo,Date fechaInicio,Date fechaFin)
+    {
+    	
+
+        try
+        {
+            EventoId eventoId = new EventoId(titulo, fechaInicio, fechaFin);
+            Optional<Evento> eventoOpt = this.eventoRepository.findById(eventoId);
+
+            if (!eventoOpt.isPresent())
+            {
+                log.error(Constants.ERR_EVENTO_NO_EXISTE);
+                throw new CalendarioException(Constants.ERR_EVENTO_CODE, Constants.ERR_EVENTO_NO_EXISTE);
+            }
+
+            Evento evento = eventoOpt.get();            
+            EventoResponseDto eventoResponseDto = new EventoResponseDto();
+            eventoResponseDto.setTitulo(evento.getId().getTitulo());
+            eventoResponseDto.setFechaInicio(evento.getId().getFechaInicio());
+            eventoResponseDto.setFechaFin(evento.getId().getFechaFin());
+            return ResponseEntity.ok(eventoResponseDto);
+
+        } catch (CalendarioException e) {
+            
+        	return ResponseEntity.badRequest().body(e);
+        }
+    }
+    
 }
+
+
+
+
